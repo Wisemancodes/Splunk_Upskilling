@@ -1,5 +1,16 @@
 # Splunk and SOC Upskilling
 
+## Table of Contents
+1. [Security Operations Centre (SOC) Fundamentals](#1-security-operations-centre-soc-fundamentals)
+2. [SIEM (Security Information and Event Management)](#2-siem-security-information-and-event-management)
+3. [Introduction to Splunk](#3-introduction-to-splunk)
+4. [Splunk Architecture & Deployment](#4-splunk-architecture--deployment)
+5. [Splunk Data & Ingestion](#5-splunk-data--ingestion)
+6. [Splunk Processing Language (SPL)](#6-splunk-processing-language-spl)
+7. [Advanced Splunk Concepts & Use Cases](#7-advanced-splunk-concepts--use-cases)
+8. [Best Practices, Certifications & Future Trends (Optional Extensions)](#8-best-practices-certifications--future-trends-optional-extensions)
+9. [Glossary](#9-glossary)
+
 This repository documents my research and practical setup for Security Operations Centre (SOC) fundamentals, SIEM technologies, and Splunk architecture.
 
 ## 1. Security Operations Centre (SOC) Fundamentals
@@ -285,3 +296,34 @@ Artificial Intelligence is rapidly changing how SOCs operate. Splunk utilises AI
 * [Splunk Education (Free Fundamentals Courses)](https://www.splunk.com/en_us/training.html)
 * [Splunk Docs (The Official Manual)](https://docs.splunk.com/)
 * [YouTube: The Most Important Field in Splunk (Sourcetypes)](https://www.youtube.com/watch?v=fAt-HqPir0Y)
+
+## 9. Glossary
+
+| Term | Definition |
+| :--- | :--- |
+| **Air-Gapped** | A security measure where a computer or network is physically and logically isolated from unsecured networks, including the public internet. |
+| **Alert Fatigue** | The desensitisation of SOC analysts caused by being continuously overwhelmed by a massive volume of alerts, leading to delayed responses or missed genuine threats. |
+| **CVE** | Common Vulnerabilities and Exposures. A publicly disclosed list of cybersecurity vulnerabilities that is standardised and uniquely numbered (e.g., CVE-2026-1234). |
+| **Data Exfiltration** | The unauthorised transfer, theft, or copying of data from a computer or server. This is often the primary objective of a cyberattack. |
+| **EDR / XDR** | Endpoint / Extended Detection and Response. Tools installed directly on devices (laptops, servers) to monitor processes and block malicious activity at the host level. |
+| **False Positive** | An alert that incorrectly flags benign, authorised, or normal network activity as malicious. |
+| **[Host](#5-splunk-data--ingestion)** | The name or IP address of the physical machine, server, or device that generated the data. |
+| **[Index](#5-splunk-data--ingestion)** | The logical storage container where the data is kept. A SOC typically uses different indexes for different data types to restrict access and speed up searches. |
+| **[Indexer](#4-splunk-architecture--deployment)** | The storage and processing engine of Splunk. Indexers receive the raw data from the forwarders, parse it, and store it on disk in structured files called "buckets". |
+| **IoA** | Indicator of Attack. Proactive signs that an attack is currently underway. IoAs focus on the intent and behaviour of the attacker rather than static evidence left behind. |
+| **IoC** | Indicator of Compromise. A reactive piece of forensic data (like a malicious IP address or file hash) that suggests a network has already been breached. |
+| **Lateral Movement** | Techniques that attackers use to move progressively from device to device through a network after gaining initial access, usually searching for higher privileges. |
+| **MITRE ATT&CK** | A globally accessible knowledge base of adversary tactics and techniques based on real-world observations. SOCs use this framework to map and understand attacker behaviours. |
+| **Playbook / Runbook** | A documented, step-by-step set of instructions that SOC analysts follow to standardise the response to specific types of security incidents. |
+| **RBAC** | Role-Based Access Control. A method of restricting network access and system privileges based strictly on the user's specific job function or tier within the enterprise. |
+| **[Search Head](#4-splunk-architecture--deployment)** | The web interface logged into by an analyst. It sends query requests down to the Indexers, merges the results together, and displays them. |
+| **SIEM** | Security Information and Event Management. A central software solution that ingests, aggregates, and analyses log activity from across an entire IT infrastructure. |
+| **SOAR** | Security Orchestration, Automation, and Response. Software used to automate repetitive incident response tasks and triage low-level alerts without human intervention. |
+| **SOC** | Security Operations Centre. A centralised function within a business that employs people, processes, and technology to continuously monitor and improve the organisation's security posture. |
+| **[Source](#5-splunk-data--ingestion)** | The exact file path, script, or network port the data was read from. |
+| **[Sourcetype](#5-splunk-data--ingestion)** | Identifies the format of the data (e.g., `linux_secure`, `json`). It tells Splunk exactly how to break the text apart, find the timestamp, and extract fields. |
+| **SPL** | Splunk Processing Language. The proprietary pipeline-based language used to search, filter, modify, and visualise data within Splunk. |
+| **Threat Intelligence (CTI)** | Cyber Threat Intelligence. Data collected and analysed regarding current global threat actors, their motives, and their attack infrastructures. |
+| **TTPs** | Tactics, Techniques, and Procedures. The evolving methods, behaviours, and operational patterns used by cybercriminals to execute cyberattacks. |
+| **[Universal Forwarder](#4-splunk-architecture--deployment)** | Lightweight agents installed directly on endpoints. Their only job is to silently collect raw machine logs and forward them across the network to Splunk. |
+| **Zero-Day** | A software vulnerability that is actively being exploited but is entirely unknown to the software vendor, meaning developers have had "zero days" to release a patch. |
