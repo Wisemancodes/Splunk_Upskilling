@@ -124,6 +124,10 @@ A SOC Analyst using Splunk is a security professional who uses the platform as t
 | **Splunk Free** | A limited version for personal use or very small environments, restricted to ingesting 500MB of data per day with no alerting capabilities. |
 | **Splunk Enterprise Security (ES)** | A premium application built on top of Splunk Enterprise, specifically designed with pre-built SOC dashboards, incident review tools, and advanced threat intelligence integrations. |
 
+**Which Version Should a Business Choose?**
+* **Splunk Cloud (SaaS):** Best for **start-ups, mid-market businesses, and cloud-first tech companies** (e.g., e-commerce, digital platforms). These companies want zero hardware management overhead and need to scale their data capacity rapidly.
+* **Splunk Enterprise (On-Premises):** Essential for **highly regulated industries** (e.g., banking like Deutsche Bank, healthcare, government, and defence). These sectors often face strict data sovereignty laws requiring total physical control of data, or they operate on "air-gapped" networks with no internet connection.
+
 ## 4. Splunk Architecture & Deployment
 
 **Components of Splunk Architecture:**
@@ -140,6 +144,13 @@ As organisations grow and ingest more data, they cannot run Splunk on just one s
 * **Distributed Search:** The Search Head is placed on its own dedicated server, and it queries multiple different Indexer servers simultaneously. This speeds up searching massively because the workload is shared.
 * **Search Head Clustering (SHC):** A group of multiple Search Heads that share the exact same configurations, dashboards, and user sessions. If one Search Head server crashes, the others take over seamlessly (High Availability), and it balances the load when hundreds of analysts are searching at the same time.
 * **Indexer Clustering:** Replicating the stored log data across multiple Indexers so that if a hard drive fails or a server goes offline, no historical security logs are lost.
+
+**Splunk SmartStore (Decoupling Compute & Storage):**
+In modern deployments (especially Splunk Cloud), Splunk uses an architecture called **SmartStore** to separate processing power from hard drive space. 
+* **Hot Data (Active):** Kept on incredibly fast, expensive local SSDs on the Indexer for real-time writing and searching.
+* **Warm/Cold Data (Historical):** Automatically moved to massive, cheap cloud object storage (like **AWS S3 buckets**). 
+
+*Why this matters:* It allows organisations to "decouple compute from storage." A business can endlessly expand their historical log retention in low-cost cloud storage without ever needing to buy additional, expensive physical Indexer servers just for the hard drive space.
 
 ## 5. Splunk Data & Ingestion
 
