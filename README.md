@@ -50,11 +50,27 @@ A Security Operations Centre (SOC) is a centralised function within a business t
 **Threat Hunting:**
 Unlike detection, which is reactive (waiting for a SIEM alert to fire), threat hunting is **proactive**. Analysts assume the network has already been breached and actively search through data to find sophisticated threats that have bypassed automated security controls.
 
+### Proactive SOC Threat Hunting
+
+This image visualizes the continuous, iterative loop of hypothesis-driven threat hunting using Splunk.
+
+![Proactive SOC Threat Hunting Loop](images/splunk-threat-hunting.jpg)
+
+*Key stages visualized: Hypothesis Generation, Proactive Search/Querying, Pattern & Anomaly Detection, and Feedback Loop (Alert Rule Creation).*
+
 **Common Event Types to Look Out For:**
 * **Failed Login Attempts:** Especially "brute force" patterns (e.g., hundreds of failed logins in a minute).
 * **Unusual Outbound Traffic:** Large amounts of data leaving the network, which could indicate data exfiltration.
 * **Privilege Escalation:** A standard user suddenly attempting to gain administrative rights.
 * **Suspicious File Executions:** Unknown or malicious software (malware) running on an endpoint.
+
+### Deep SOC Threat Analysis
+
+This image details the deep investigative flow that occurs after a reactive alert trigger.
+
+![Deep SOC Threat Analysis Workflow](images/splunk-threat-analysis.jpg)
+
+*Key stages visualized: Alert Trigger, Triage & Validation, Deep Investigation & Correlation (using multiple log sources and Threat Intel enrichment), and Determination (True Positive vs. False Positive).*
 
 
 ## 2. SIEM (Security Information and Event Management)
@@ -68,7 +84,7 @@ Imagine a large casino with hundreds of security cameras, card readers, and cash
 * A **SIEM** acts like the central security control room. It takes the feed from every single camera, door, and register across the building and puts them onto one massive wall of screens. 
 * Crucially, it doesn't just show the data; it uses logic. If it notices a door being forced open while the camera feed in that hallway suddenly goes blank, it sounds an alarm for the human guards (the SOC analysts) to investigate.
 
-### High-Level SOC & SIEM Data Flow
+### SOC & SIEM Data Flow
 
 ```mermaid
 graph TD
@@ -137,6 +153,8 @@ At its core, Splunk operates as a three-stage data pipeline. These components wo
 * **Indexers (The Storage & Processing Engine):** The heavy lifters of the architecture. Indexers receive the raw data from the forwarders, parse it (extracting fields like timestamps and IPs), and store it on disk in structured files called "buckets." They create a searchable index—much like the index at the back of a textbook—so you can find specific data instantly.
 * **Search Head (The UI):** This is the web interface you actually log into as an analyst. It does not store the data. When you type a query, the Search Head sends that request down to the Indexers. The Indexers do the searching locally and send the results back to the Search Head, which then merges the data together and displays it to you as tables, graphs, or dashboards.
 
+![Splunk Distributed Architecture and Data Pipeline](images/splunk-architecture.png)
+
 **Options for Deploying Splunk:**
 As organisations grow and ingest more data, they cannot run Splunk on just one server. They scale using different architectural deployments:
 
@@ -149,6 +167,8 @@ As organisations grow and ingest more data, they cannot run Splunk on just one s
 In modern deployments (especially Splunk Cloud), Splunk uses an architecture called **SmartStore** to separate processing power from hard drive space. 
 * **Hot Data (Active):** Kept on incredibly fast, expensive local SSDs on the Indexer for real-time writing and searching.
 * **Warm/Cold Data (Historical):** Automatically moved to massive, cheap cloud object storage (like **AWS S3 buckets**). 
+
+![Splunk Distributed Architecture and Data Pipeline](images/splunk-smartstore.jpg)
 
 *Why this matters:* It allows organisations to "decouple compute from storage." A business can endlessly expand their historical log retention in low-cost cloud storage without ever needing to buy additional, expensive physical Indexer servers just for the hard drive space.
 
