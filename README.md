@@ -60,13 +60,40 @@ Unlike detection, which is reactive (waiting for a SIEM alert to fire), threat h
 ## 2. SIEM (Security Information and Event Management)
 
 **What is SIEM?**
-SIEM is a software solution that aggregates and analyses activity from many different resources across an entire IT infrastructure. It collects machine-generated logs (the "Information"), translates them into a readable format, and uses rules to identify suspicious patterns, generating alerts (the "Event Management") for security analysts to investigate.
+SIEM is a software solution that ingests, aggregates and analyses activity from many different resources across an entire IT infrastructure. It collects machine-generated logs (the "Information"), translates/parses them into a readable format, and uses rules to identify suspicious patterns, generating alerts (the "Event Management") for security analysts to investigate.
 
 **An Analogy for SIEM:**
 Imagine a large casino with hundreds of security cameras, card readers, and cash registers. 
 * Individually, these devices generate too much raw data for one person to watch simultaneously. 
 * A **SIEM** acts like the central security control room. It takes the feed from every single camera, door, and register across the building and puts them onto one massive wall of screens. 
 * Crucially, it doesn't just show the data; it uses logic. If it notices a door being forced open while the camera feed in that hallway suddenly goes blank, it sounds an alarm for the human guards (the SOC analysts) to investigate.
+
+### High-Level SOC & SIEM Data Flow
+
+```mermaid
+graph TD
+    subgraph Sources [Data Sources]
+        A[Servers]
+        C[Firewalls]
+        D[Cloud]
+        E[Endpoints]
+        F[Network Devices]
+    end
+
+    Sources --> G[Generate Logs & Events]
+    G --> H[SIEM - Splunk]
+
+    subgraph SIEM_Functions [Splunk Core Functions]
+        H --> H1[Collect Data]
+        H --> H2[Index Data]
+        H --> H3[Search Events]
+        H --> H4[Detect Threats]
+        H --> H5[Generate Alerts]
+    end
+
+    SIEM_Functions --> I[SOC Analysts]
+    I --> J[Investigate ➔ Contain ➔ Recover ➔ Improve]    
+```
 
 **Examples of SIEM Software in 2026:**
 * **Splunk Enterprise Security:** Highly customisable and dominant in large enterprises.
