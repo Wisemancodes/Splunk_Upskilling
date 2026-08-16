@@ -32,12 +32,17 @@ A Security Operations Centre (SOC) is a centralised function within a business t
 * **Firewalls & IDS/IPS:** Network barriers and Intrusion Detection/Prevention Systems.
 
 **Processes (The Incident Response Lifecycle):**
-1. **Preparation:** Setting up tools, configuring rules, and training staff.
-2. **Identification:** Detecting a potential incident via alerts or hunting.
-3. **Containment:** Stopping the threat from spreading (e.g., isolating an infected laptop from the network).
-4. **Eradication:** Removing the threat entirely (e.g., deleting malware).
-5. **Recovery:** Restoring systems to normal, secure operation.
-6. **Lessons Learned:** Documenting the incident to improve future responses and update rules.
+1. **Preparation:** Setting up tools, configuring SIEM alerting rules, establishing playbooks, and training staff before an attack ever happens.
+2. **Identification:** Confirming a genuine attack is underway, either reactively through an alert or proactively through threat hunting.
+3. **Containment:** Stopping the bleeding to prevent lateral movement. This includes isolating infected laptops from the network, disabling compromised user accounts, or blocking malicious IP addresses at the firewall.
+4. **Eradication:** The phase focused on removing the threat entirely from the environment. Examples include:
+    * Deleting the malicious files or malware executables.
+    * Identifying and removing hidden backdoor accounts created by the attacker.
+    * Re-imaging a severely compromised machine (wiping the hard drive completely).
+    * Applying security patches to fix the software vulnerability that allowed the attacker in.
+    * Forcing a global password reset for all compromised users.
+5. **Recovery:** Bringing systems safely back online and monitoring them closely to ensure the attacker does not immediately return.
+6. **Lessons Learned:** The crucial post-incident review. Documenting the breach, updating SIEM detection rules, and modifying playbooks so the exact same attack cannot succeed again.
 
 **Challenges:**
 * **Alert Fatigue:** Analysts becoming overwhelmed by the sheer volume of alerts and false positives.
@@ -160,9 +165,11 @@ A SOC Analyst using Splunk is a security professional who uses the platform as t
 **Components of Splunk Architecture:**
 At its core, Splunk operates as a three-stage data pipeline. These components work together to collect, store, and analyse data.
 
-* **Universal Forwarders (The Collectors):** Lightweight agents installed directly on your endpoints (like employee laptops or web servers). Their only job is to silently collect raw machine logs and forward them across the network to Splunk. They use very little CPU and do not process the data themselves. *(Note: There are also **Heavy Forwarders** which can parse and filter data before sending it, saving network bandwidth).*
-* **Indexers (The Storage & Processing Engine):** The heavy lifters of the architecture. Indexers receive the raw data from the forwarders, parse it (extracting fields like timestamps and IPs), and store it on disk in structured files called "buckets." They create a searchable index—much like the index at the back of a textbook—so you can find specific data instantly.
-* **Search Head (The UI):** This is the web interface you actually log into as an analyst. It does not store the data. When you type a query, the Search Head sends that request down to the Indexers. The Indexers do the searching locally and send the results back to the Search Head, which then merges the data together and displays it to you as tables, graphs, or dashboards.
+* **Universal Forwarders (UF):** The absolute standard for data collection. These are incredibly lightweight agents installed directly on endpoints (laptops, servers). Their only job is to silently collect raw machine logs and stream them across the network to Splunk. They use minimal CPU and memory, and crucially, they do *not* parse or alter the data themselves.
+* **Heavy Forwarders (HF):** A much more robust, heavier forwarding agent. Unlike a UF, a Heavy Forwarder actually parses and filters the data *before* sending it over the network. SOCs use Heavy Forwarders to drop useless log events to save on expensive storage costs, or to mask sensitive data (like removing passwords from a log text) before it reaches the Indexer.
+* **Indexers (The Storage & Processing Engine):** The heavy lifters of the architecture. Indexers receive the raw data, parse it (breaking it into events and extracting fields), and store it on disk in structured files called "buckets." They build a searchable index that allows analysts to query massive volumes of data instantly.
+* **Search Head (The UI):** This is the web interface (the centralised console) you log into as an analyst. It does not store the data itself. When you type an SPL query, the Search Head distributes that search to all the Indexers, gathers their individual results, merges them together, and displays them to you. It also manages all Knowledge Objects, dashboards, and alerts.
+* **Monitoring Console (MC):** A critical, built-in Splunk application used by administrators. It acts as the "health check" dashboard for the entire Splunk architecture. It provides a visual interface to monitor how full the indexer storage capacity is, check if the Search Head is maxing out its CPU usage, and ensure all Universal Forwarders are actively phoning home.
 
 ![Splunk Distributed Architecture and Data Pipeline](images/splunk-architecture.png)
 
@@ -185,9 +192,16 @@ In modern deployments (especially Splunk Cloud), Splunk uses an architecture cal
 
 ## 5. Splunk Data & Ingestion
 
-**What is Event Data? (A Dictionary Definition)**
-> **Event Data** (noun) /ɪˈvɛnt ˈdeɪtə/
-> A single, time-stamped record of an activity or occurrence generated by a machine or software application. In Splunk, an "event" is a single row of data that contains the raw log text alongside metadata tags (like the time it happened, where it came from, and its format) added by the system.
+**What is Event Data?**
+An event is a single, timestamped record of machine-generated data that occurs on an IT system. Splunk breaks every single event down into two distinct categories:
+1. **The Context (Metadata):** The tags assigned by Splunk to categorise and organise the data as it enters the system. This includes:
+    * **Timestamp:** The exact date and time the event occurred.
+    * **Host:** The name or IP of the physical machine generating the log.
+    * **Source:** The exact file path or port the data came from.
+    * **Sourcetype:** The instruction manual telling Splunk how to format the data.
+2. **The Content (The Payload):** 
+    * **Raw Text:** The actual, original text string generated by the machine.
+    * **Extracted Fields:** Specific categories of identifiers (like `user=` or `src_ip=`) that Splunk automatically pulls out of the raw text to make searching easier.
 
 **Basic Terms in Splunk (The Metadata Fields):**
 When data enters the indexer, Splunk automatically tags every single event with four crucial default fields so you can filter and find it later:
@@ -196,18 +210,28 @@ When data enters the indexer, Splunk automatically tags every single event with 
 * **Sourcetype:** The most important field in Splunk. It identifies the format of the data (e.g., `linux_secure`, `cisco:asa`, `json`). It acts as the instruction manual telling Splunk exactly how to break the text apart, find the timestamp, and extract fields.
 * **Index:** The logical storage container where the data is kept. A SOC typically uses different indexes for different data types to restrict access and speed up searches (e.g., `index=network` vs `index=endpoints`).
 
+**The Index:**
+The Index is the highly structured, logical storage container where this event data is permanently stored on the Indexer's hard drive, usually separated into "buckets" (Hot, Warm, and Cold based on age).
+
 **What type of data/files does Splunk usually ingest?**
-Splunk can read virtually any machine-generated data that is in a human-readable format. Common examples include:
-* **Log Files:** Windows Event Logs, Syslog (Linux), web server logs (Apache/IIS), and firewall traffic logs.
-* **Structured Data:** CSV (Comma-Separated Values) and JSON (JavaScript Object Notation) files.
-* **Script Outputs:** Data generated by custom Python, PowerShell, or Bash scripts.
+Splunk can ingest and parse virtually any format of IT data, categorised broadly as:
+1. **OS & Log Files:** Raw text logs generated by operating systems (e.g., Windows Event Logs, Linux Syslog `/var/log/auth.log`).
+2. **Structured Files:** Pre-formatted data tables where fields are already defined (e.g., CSV, JSON, and XML files).
+3. **Network Data:** Traffic routing and security logs (e.g., Firewall allow/block logs, proxy server web traffic, and IDS/IPS alerts).
+4. **Cloud & SaaS Data:** Activity logs pulled via APIs from remote environments (e.g., AWS CloudTrail, Microsoft 365 logins, Salesforce user activity).
+5. **Sensor Data:** Outputs from physical security and IoT devices (e.g., office badge swipe readers, temperature sensors in server rooms).
+6. **Script Outputs:** Data generated by custom Python, PowerShell, or Bash scripts.
 
 **How can Splunk onboard/ingest data?**
-There are four main methods to get data into the Splunk platform:
-1. **Upload:** Manually uploading a static file (like a CSV or a `.txt` log file) via the web browser. This is primarily used for testing, historical analysis, or learning.
-2. **Monitor:** Pointing Splunk at a specific file or directory on its own local hard drive and telling it to constantly watch for and index new lines as they are written.
-3. **Forward:** The enterprise standard. Installing Universal Forwarders on remote machines across the network to automatically and securely stream data to the central indexers.
-4. **HTTP Event Collector (HEC):** A fast, secure way to send data directly to Splunk over the network using an API token, without needing a Forwarder. It is extremely popular for cloud applications, serverless functions, and modern web apps.
+Ingestion methods depend entirely on the environment and the data source:
+* **Training & Development Methods:**
+  * **Manual Upload:** Uploading a static, historical file (like a CSV) directly via the web UI. Great for testing, but never used for live environments.
+  * **Monitoring Files/Dirs:** Pointing Splunk to continuously watch a specific local folder on its own hard drive for new log entries.
+* **Real-World / Enterprise Methods:**
+  * **Universal Forwarders (UFs):** The standard enterprise method for securely streaming real-time data from thousands of remote endpoints.
+* **Workarounds & Alternative Inputs:**
+  * **Network Inputs:** Configuring Splunk to listen directly on a network port (e.g., UDP 514). Used heavily for legacy network devices (like old switches or firewalls) that cannot have a Universal Forwarder installed on them.
+  * **HTTP Event Collector (HEC):** A highly efficient, token-based method for securely sending data directly to Splunk over HTTP/HTTPS. Extremely popular for collecting logs from modern web applications and serverless cloud functions.
 
 ## 6. Splunk Processing Language (SPL)
 
@@ -243,16 +267,19 @@ These commands group data specifically over time or by category so that Splunk c
 
 ## 7. Advanced Splunk Concepts & Use Cases
 
-**What can you produce in Splunk?**
-Once data is ingested and searchable, you can produce three main types of knowledge objects to make it useful:
-* **Dashboards:** Visual representations of your data using charts, graphs, and "glass tables." They allow non-technical staff and management to monitor network health or security posture at a glance without writing SPL.
-* **Reports:** Scheduled searches that run automatically at set intervals (e.g., weekly) and generate PDFs or CSVs to be emailed to stakeholders (e.g., a "Weekly Failed Logins" report).
-* **Alerts:** Automated triggers that fire when a specific search condition is met. For example, if Splunk detects malware, the alert can email the SOC team or automatically trigger a SOAR playbook to isolate the infected machine.
+**Knowledge Objects (KOs) in Splunk:**
+A Knowledge Object is a user-defined entity that enriches, normalises, or visually represents the raw data to make it easier for analysts to interpret. Key KOs include:
+* **Fields:** Categories of identifiers extracted from the raw text (e.g., telling Splunk that a string of numbers in a log should be categorised under the field `src_ip`).
+* **Lookups:** Tables (often CSV files) used to map log data to external, real-world information. *Example: A lookup table can translate an IP address in your logs into a physical country location, or map a username to a specific corporate department.*
+* **Macros:** Reusable chunks of SPL code. If you have a massive, complex search string you use every day, you can save it as a Macro and just type `` `my_macro` `` instead of rewriting it.
+* **Tags:** Aliases given to specific field/value pairs. *Example: Tagging all IP addresses belonging to the database servers as "PCI_Scope" so they are easily searchable.*
+* **Event Types:** A way to categorise events based on a specific search string. *Example: Creating an Event Type called "Successful_Login" that automatically tags any event containing `action=success`.*
+* **Alerts:** A saved search that constantly runs in the background and triggers an automated action (like sending an email to the SOC or executing a SOAR playbook) when specific conditions are met.
+* **Dashboards:** The centralised face of data visualisations. They combine multiple charts, graphs, and tables to tell a comprehensive story or answer critical business questions at a glance (e.g., a "SOC Overview" dashboard displaying global threat maps and current active alerts). Dashboards are frequently the final product in SOC analyst projects.
 
 **Splunk Apps vs Splunk Add-ons:**
-While both are downloaded from Splunkbase (Splunk's app store) to extend functionality, they serve entirely different purposes:
-* **Add-ons (The Plumbers):** These run in the background and generally *do not* have a visual user interface (GUI). Their main job is data collection and optimisation. They provide the instructions (sourcetypes and field extractions) to tell Splunk how to ingest data from a specific vendor, like a Cisco firewall or an AWS cloud environment. 
-* **Apps (The Visualisers):** Apps are comprehensive packages that *do* have a navigable GUI. They are built to solve a specific use case and contain pre-built dashboards, reports, and alerts. An App often relies on the data that was brought in by an Add-on. *Example: The Splunk Enterprise Security (ES) App.*
+* **Add-ons (The Plumbers):** These run entirely in the background without a visual user interface. Their main job is data collection and formatting. They provide the instructions (sourcetypes and field extractions) to tell Splunk exactly how to ingest and parse data from a specific vendor, like a Cisco firewall or a Windows server.
+* **Apps (The Visualisers):** Comprehensive packages that *do* have a navigable, graphical UI. They rely heavily on the raw data brought in by Add-ons to populate pre-built dashboards, reports, and specialised analyst workspaces. *Example: The Splunk Enterprise Security (ES) App.*
 
 **Case Studies of Splunk in Action:**
 
@@ -324,6 +351,7 @@ Artificial Intelligence is rapidly changing how SOCs operate. Splunk utilises AI
 | **[Sourcetype](#5-splunk-data--ingestion)** | Identifies the format of the data (e.g., `linux_secure`, `json`). It tells Splunk exactly how to break the text apart, find the timestamp, and extract fields. |
 | **SPL** | Splunk Processing Language. The proprietary pipeline-based language used to search, filter, modify, and visualise data within Splunk. |
 | **Threat Intelligence (CTI)** | Cyber Threat Intelligence. Data collected and analysed regarding current global threat actors, their motives, and their attack infrastructures. |
-| **TTPs** | Tactics, Techniques, and Procedures. The evolving methods, behaviours, and operational patterns used by cybercriminals to execute cyberattacks. |
 | **[Universal Forwarder](#4-splunk-architecture--deployment)** | Lightweight agents installed directly on endpoints. Their only job is to silently collect raw machine logs and forward them across the network to Splunk. |
 | **Zero-Day** | A software vulnerability that is actively being exploited but is entirely unknown to the software vendor, meaning developers have had "zero days" to release a patch. |
+| **Eradication** | The active incident response phase focused on removing a threat entirely from the IT environment. Examples include deleting malware, removing attacker backdoor accounts, patching exploited vulnerabilities, and forcing password resets. |
+| **TTPs** | Tactics, Techniques, and Procedures. The specific, evolving behaviours, methodologies, and operational patterns used by cybercriminals to execute attacks. Analysing TTPs helps SOCs build proactive defences rather than just reacting to isolated indicators of compromise. |
