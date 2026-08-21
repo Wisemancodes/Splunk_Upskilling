@@ -210,6 +210,8 @@ When data enters the indexer, Splunk automatically tags every single event with 
 * **Sourcetype:** The most important field in Splunk. It identifies the format of the data (e.g., `linux_secure`, `cisco:asa`, `json`). It acts as the instruction manual telling Splunk exactly how to break the text apart, find the timestamp, and extract fields.
 * **Index:** The logical storage container where the data is kept. A SOC typically uses different indexes for different data types to restrict access and speed up searches (e.g., `index=network` vs `index=endpoints`).
 
+![Splunk Data Hierarchy](images/index-host-source-sourcetype.jpeg)
+
 **The Index:**
 The Index is the highly structured, logical storage container where this event data is permanently stored on the Indexer's hard drive, usually separated into "buckets" (Hot, Warm, and Cold based on age).
 
